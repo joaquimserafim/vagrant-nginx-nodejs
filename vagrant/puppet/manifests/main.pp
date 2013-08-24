@@ -27,7 +27,7 @@ class othertools {
     }
 }
 
-class node-js {
+class nodejs {
   include apt
   apt::ppa {
     'ppa:chris-lea/node.js': notify => Package["nodejs"]
@@ -38,42 +38,20 @@ class node-js {
       require => [Exec["aptGetUpdate"],Class["apt"]]
   }
 
-  exec { "npm-update" :
-      cwd => "/vagrant",
-      command => "npm -g update",
-      onlyif => ["test -d /vag rant/node_modules"],
-      path => ["/bin", "/usr/bin"],
-      require => Package['nodejs']
-  }
-}
-
-class mongodb {
-  exec { "10genKeys":
-    command => "sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10",
+  exec {"hapi":
+    cwd => "/vagrant",
     path => ["/bin", "/usr/bin"],
-    notify => Exec["aptGetUpdate"],
-    unless => "apt-key list | grep 10gen"
-  }
-
-  file { "10gen.list":
-    path => "/etc/apt/sources.list.d/10gen.list",
-    ensure => file,
-    content => "deb http://downloads-distro.mongodb.org/repo/debian-sysvinit dist 10gen",
-    notify => Exec["10genKeys"]
-  }
-
-  package { "mongodb-10gen":
-    ensure => present,
-    require => [Exec["aptGetUpdate"],File["10gen.list"]]
+    command => "sudo npm -S install hapi",
+    require  => Package['nodejs'],
   }
 }
 
-class { 'redis':
-  version => '2.6.13',
-}
 
 include apt_update
 include othertools
-include node-js
-include mongodb
-include redis
+include nodejs
+
+class { "nginx":
+  source => [ "/vagrant/nginx.conf"]
+}
+
