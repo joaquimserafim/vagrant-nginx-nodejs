@@ -25,6 +25,11 @@ class othertools {
         ensure => present,
         require => Exec["aptGetUpdate"]
     }
+
+    package { "g++":
+        ensure => present,
+        require => Exec["aptGetUpdate"]
+    }
 }
 
 class nodejs {
@@ -38,11 +43,28 @@ class nodejs {
       require => [Exec["aptGetUpdate"],Class["apt"]]
   }
 
-  exec {"hapi":
-    cwd => "/vagrant",
-    path => ["/bin", "/usr/bin"],
-    command => "sudo npm -S install hapi",
-    require  => Package['nodejs'],
+  exec { "npm-update" :
+      cwd => "/vagrant",
+      command => "npm -g update",
+      onlyif => ["test -d /vagrant/node_modules"],
+      path => ["/bin", "/usr/bin"],
+      require => Package['nodejs']
+  }
+}
+
+class the-nginx {
+  class { 'nginx': }
+  nginx::resource::upstream { 'www-node-1':
+    ensure  => present,
+    members => [
+      'localhost:8000'
+    ]
+  }
+
+  nginx::resource::vhost { 'proxy-node':
+    ensure      => present,
+    listen_port => 8080,
+    proxy       => 'http://www-node-1'
   }
 }
 
@@ -50,8 +72,5 @@ class nodejs {
 include apt_update
 include othertools
 include nodejs
-
-class { "nginx":
-  source => [ "/vagrant/nginx.conf"]
-}
+include the-nginx
 
